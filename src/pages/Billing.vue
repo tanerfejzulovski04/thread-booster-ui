@@ -1,42 +1,77 @@
 <template>
-  <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center">
-      <h3>Plan & Usage</h3>
-      <router-link to="/dashboard" class="btn btn-link">← Back</router-link>
+  <div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+      <h3 class="text-2xl font-bold">Plan & Usage</h3>
+      <Button as-child variant="link">
+        <router-link to="/dashboard">← Back</router-link>
+      </Button>
     </div>
 
-    <div class="card mt-3">
-      <div class="card-body">
-        <h5 class="card-title">Current Plan: <span class="badge text-bg-primary">{{ plan }}</span></h5>
-        <div class="row mt-3">
-          <div class="col-md-4"><strong>Generations today:</strong> {{ today.generations }} / {{ limits.generations_per_day ?? '∞' }}</div>
-          <div class="col-md-4"><strong>Refreshes today:</strong> {{ today.refreshes }} / {{ limits.refreshes_per_day ?? '∞' }}</div>
-          <div class="col-md-4"><strong>Posts today:</strong> {{ today.posts }} / {{ limits.posts_per_day ?? '∞' }}</div>
+    <!-- Current Plan -->
+    <Card class="mt-6">
+      <CardHeader>
+        <CardTitle>
+          Current Plan: <Badge variant="secondary" textColor="white">{{ plan }}</Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <strong class="text-sm">Generations today:</strong> {{ today.generations }} / {{ limits.generations_per_day ?? '∞' }}
+          </div>
+          <div>
+            <strong class="text-sm">Refreshes today:</strong> {{ today.refreshes }} / {{ limits.refreshes_per_day ?? '∞' }}
+          </div>
+          <div>
+            <strong class="text-sm">Posts today:</strong> {{ today.posts }} / {{ limits.posts_per_day ?? '∞' }}
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
 
-    <div class="card mt-3">
-      <div class="card-body">
-        <h5 class="card-title">Upgrade</h5>
-        <p class="text-muted">Want higher limits? Pick a plan and we’ll reach out.</p>
-        <div class="d-flex gap-2">
-          <select v-model="target" class="form-select" style="max-width: 220px;">
-            <option value="basic">Basic</option>
-            <option value="pro">Pro</option>
-          </select>
-          <button class="btn btn-outline-primary" @click="request" :disabled="loading">{{ loading ? 'Sending…' : 'Request upgrade' }}</button>
+    <!-- Upgrade Section -->
+    <Card class="mt-6">
+      <CardHeader>
+        <CardTitle>Upgrade</CardTitle>
+        <CardDescription>Want higher limits? Pick a plan and we’ll reach out.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div class="flex flex-wrap gap-2">
+          <Select v-model="target" class="w-[220px]">
+            <SelectTrigger>
+              <SelectValue placeholder="Select a plan" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="basic">Basic</SelectItem>
+              <SelectItem value="pro">Pro</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" :disabled="loading" @click="request">
+            {{ loading ? 'Sending…' : 'Request upgrade' }}
+          </Button>
         </div>
-        <div v-if="msg" class="alert alert-success mt-3">{{ msg }}</div>
-        <div v-if="err" class="alert alert-danger mt-3">{{ err }}</div>
-      </div>
-    </div>
+        <Alert v-if="msg" variant="default" class="mt-4">
+          <AlertTitle>Success</AlertTitle>
+          <AlertDescription>{{ msg }}</AlertDescription>
+        </Alert>
+        <Alert v-if="err" variant="destructive" class="mt-4">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{{ err }}</AlertDescription>
+        </Alert>
+      </CardContent>
+    </Card>
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import api from '@/api/http';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const plan = ref('free');
 const limits = ref<Record<string, number>>({});
@@ -54,11 +89,13 @@ const load = async () => {
 };
 
 const request = async () => {
-  loading.value = true; msg.value=''; err.value='';
+  loading.value = true;
+  msg.value = '';
+  err.value = '';
   try {
     await api.post('/api/billing/request-upgrade', { target_plan: target.value });
     msg.value = 'Thanks! We’ll get back to you shortly.';
-  } catch (e:any) {
+  } catch (e: any) {
     err.value = e?.response?.data?.message || 'Failed to send request';
   } finally {
     loading.value = false;
@@ -67,3 +104,7 @@ const request = async () => {
 
 onMounted(load);
 </script>
+
+<style scoped>
+/* Minimal scoped styles; shadcn-vue and Tailwind handle most styling */
+</style>
